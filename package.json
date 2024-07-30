@@ -1,0 +1,18 @@
+{
+  "name": "virtualstreets-helper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VirtualStreets/Helper-Discord"
+  },
+  "dependencies": {
+    "ark.db": "^2.7.1",
+    "axios": "^1.7.2",
+    "eris": "^0.17.2"
+  }
+}

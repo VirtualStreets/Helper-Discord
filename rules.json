@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "id": "1",
+      "rule": "be nice",
+      "severity": 1
+    },
+    {
+      "id": "1.1",
+      "rule": "be more nice",
+      "severity": 1
+    },
+    {
+      "id": "2",
+      "rule": "be even more nice",
+      "severity": 1
+    }
+  ]
+}
