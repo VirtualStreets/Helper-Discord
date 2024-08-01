@@ -2,8 +2,9 @@ const Eris = require("eris");
 const { createCanvas, loadImage, registerFont } = require("canvas");
 const axios = require("axios");
 const fetchStreetViewImage = require("../functions/fetchStreetViewImage");
-
-registerFont('Inter.ttc', { family: 'Inter', weight: 'bold' })
+const validateGoogleMapsUrl = require("../functions/validateGoogleMapsUrl");
+const extractCoordinatesFromUrl = require("../functions/extractCoordinatesFromUrl");
+const getCountryBoundingBox = require("../functions/getCountryBoundingBox");
 
 async function createCanvasImage(imageBuffer) {
     const targetWidth = 780;
@@ -29,51 +30,157 @@ async function createCanvasImage(imageBuffer) {
 
 module.exports.run = async (client, interaction) => {
 
+    let url = "https://maps.app.goo.gl/CGWzA7kPsgEd23yn6"
+    url = await validateGoogleMapsUrl(url)
 
-    const lat = 42.8462874;
-    const lng = 2.7746311;
-    const heading = 34;
-    const pitch = 10;
+    if (!url.valid) return interaction.createMessage({
+        content: url.response
+    })
 
-    // const imageBuffer = await fetchStreetViewImage(lat, lng, heading, pitch);
-    // const canvasBuffer = await createCanvasImage(imageBuffer);
+    const coordinates = extractCoordinatesFromUrl(url.response)
+
+    const {lat, lng, fov, heading, pitch} = coordinates
+
+    console.log(lat, lng, heading, pitch)
+
+    const countryBoundingBox = await getCountryBoundingBox("South Africa");
+    console.log(countryBoundingBox)
+    const difLat = countryBoundingBox.maxLat - countryBoundingBox.minLat;
+    const difLng = countryBoundingBox.maxLon - countryBoundingBox.minLon;
+
+    console.log(lat, lng)
+
+    const latRatio = (lat - countryBoundingBox.minLat) / difLat;
+    const lngRatio = (lng - countryBoundingBox.minLon) / difLng;
+
+    console.log(latRatio, lngRatio)
+
 
 
     const width = 1600;
     const height = 900;
     const canvas = await createCanvas(width, height);
-    // const image = await loadImage(canvasBuffer);
 
     const ctx = await canvas.getContext("2d");
 
     ctx.fillStyle = "white";
     await ctx.fillRect(0, 0, width, height);
+    const svg = await loadImage('assets/img/countrySvg/SouthAfrica.svg');
 
-    // text
+    const x = 974;
+    const y = 464;
+
+    const imageBuffer = await fetchStreetViewImage(lat, lng, heading, pitch, fov);
+    const canvasBuffer = await createCanvasImage(imageBuffer);
+    const image = await loadImage(canvasBuffer);
+
+    const streetviewImage = {
+        data: image,
+        width: image.width,
+        height: image.height,
+        offset: {
+            x: 800,
+            y: 26
+        }
+    }
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.moveTo(streetviewImage.offset.x + 50, streetviewImage.offset.y);
+    ctx.lineTo(streetviewImage.offset.x + streetviewImage.width - 50, streetviewImage.offset.y);
+    ctx.quadraticCurveTo(streetviewImage.offset.x + streetviewImage.width, streetviewImage.offset.y, streetviewImage.offset.x + streetviewImage.width, streetviewImage.offset.y + 50);
+    ctx.lineTo(streetviewImage.offset.x + streetviewImage.width, streetviewImage.offset.y + streetviewImage.height - 50);
+    ctx.quadraticCurveTo(streetviewImage.offset.x + streetviewImage.width, streetviewImage.offset.y + streetviewImage.height, streetviewImage.offset.x + streetviewImage.width - 50, streetviewImage.offset.y + streetviewImage.height);
+    ctx.lineTo(streetviewImage.offset.x + 50, streetviewImage.offset.y + streetviewImage.height);
+    ctx.quadraticCurveTo(streetviewImage.offset.x, streetviewImage.offset.y + streetviewImage.height, streetviewImage.offset.x, streetviewImage.offset.y + streetviewImage.height - 50);
+    ctx.lineTo(streetviewImage.offset.x, streetviewImage.offset.y + 50);
+    ctx.quadraticCurveTo(streetviewImage.offset.x, streetviewImage.offset.y, streetviewImage.offset.x + 50, streetviewImage.offset.y);
+    ctx.closePath();
+
+    ctx.clip();
+    await ctx.drawImage(streetviewImage.data, streetviewImage.offset.x, streetviewImage.offset.y, streetviewImage.width, streetviewImage.height);
+    ctx.restore();
+
+    ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+    ctx.shadowBlur = 250;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 40;
+
+    ctx.drawImage(svg, x, y, svg.width, svg.height);
+
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     ctx.fillStyle = "black";
-    ctx.font = 'semibold 64px Arial'
-    ctx.fillText("South Africa", 44, 51);
+
+    ctx.fillStyle = '#DEA1B7';
+
+    ctx.beginPath();
+    ctx.arc(x+svg.width* (lngRatio)+(1+1.3/difLng) , y+svg.height* (1-latRatio)/(1+2.2/difLat), 20, 0, Math.PI * 2, true);
+
+    ctx.fill();
+    ctx.fillStyle = '#DC0150';
+
+    ctx.beginPath();
+    ctx.arc(x+svg.width* (lngRatio)+(1+1.3/difLng) , y+svg.height* (1-latRatio)/(1+2.2/difLat), 14, 0, Math.PI * 2, true);
+
+    ctx.fill();
+
+    const virtualstreetsIcon = {
+        data: await loadImage('assets/img/virtualstreetsIcon.png'),
+        width: 48,
+        height: 48,
+        offset: {
+            x: 637,
+            y: 836
+        }
+    };
+
+    ctx.drawImage(virtualstreetsIcon.data, virtualstreetsIcon.offset.x, virtualstreetsIcon.offset.y, virtualstreetsIcon.width, virtualstreetsIcon.height);
+
+    const virtualstreetsName = {
+        data: "VirtualStreets.org",
+        fontSize: 16,
+        fontWeight: 600,
+        textColor: "black",
+        offset: {
+            x: 694,
+            y: 836+48/2+16/2
+        }
+    };
+
+    ctx.fillStyle = virtualstreetsName.textColor;
+    ctx.font = `${virtualstreetsName.fontWeight} ${virtualstreetsName.fontSize}px Arial`;
+    ctx.fillText(virtualstreetsName.data, virtualstreetsName.offset.x, virtualstreetsName.offset.y);
 
 
-// // Calculate the position to center the image
-//     const x = (width / 2) - (image.width / 2);
-//     const y = (height / 2) - (image.height / 2);
-//     ctx.beginPath();
-//     ctx.moveTo(x + 50, y);
-//     ctx.lineTo(x + image.width - 50, y);
-//     ctx.quadraticCurveTo(x + image.width, y, x + image.width, y + 50);
-//     ctx.lineTo(x + image.width, y + image.height - 50);
-//     ctx.quadraticCurveTo(x + image.width, y + image.height, x + image.width - 50, y + image.height);
-//     ctx.lineTo(x + 50, y + image.height);
-//     ctx.quadraticCurveTo(x, y + image.height, x, y + image.height - 50);
-//     ctx.lineTo(x, y + 50);
-//     ctx.quadraticCurveTo(x, y, x + 50, y);
-//     ctx.closePath();
-//
-// // Clip to the current path
-//     ctx.clip();
-// // Draw the image centered on the canvas
-//     await ctx.drawImage(image, x, y, image.width, image.height);
+
+
+    ctx.font = '600 64px Arial'
+    ctx.fillText("South Africa", 44, 51+82);
+
+    ctx.fillStyle = "black";
+    ctx.font = '500 36px Arial'
+    ctx.fillText("got a new coverage", 44, 104+82);
+
+    ctx.fillStyle = "black";
+    ctx.font = '500 36px Arial'
+    ctx.fillText("On road", 44, 252+82);
+
+    ctx.fillStyle = "black";
+    ctx.font = '500 54px Arial'
+    ctx.fillText("R318", 192, 256+82);
+
+    ctx.fillStyle = "black";
+    ctx.font = '500 36px Arial'
+    ctx.fillText("in", 329, 252+82);
+
+    ctx.fillStyle = "black";
+    ctx.font = '500 54px Arial'
+    ctx.fillText("Western Cape", 367, 256+82);
+
+
     const buffer = await canvas.toBuffer("image/png");
 
 

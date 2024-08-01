@@ -143,8 +143,7 @@ module.exports.run = async (client, interaction) => {
     if (!url.valid) return interaction.createMessage({
         content: url.response
     })
-  
-    
+
     const coordinates = extractCoordinatesFromUrl(url.response)
     
     const {lat, lng} = coordinates
