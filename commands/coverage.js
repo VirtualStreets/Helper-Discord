@@ -3,6 +3,7 @@ const extractCoordinatesFromUrl = require("../functions/extractCoordinatesFromUr
 const expandShortUrl = require("../functions/expandShortUrl")
 const getStreetviewMetadata = require("../functions/getStreetviewMetadata")
 const getGeocodingData = require("../functions/getGeocodingData")
+const validateGoogleMapsUrl = require("../functions/validateGoogleMapsUrl")
 const settings = require("../settings.json")
 
 // :newcountry:                             when a country gets its first coverage of the month
@@ -96,32 +97,96 @@ const genReplaceChoices = [
     }
 ];
 
+const assistanceSelectMenuTags = [
+    {
+        label: "New road",
+        emoji: {
+            id: null,
+            name: "🆕"
+        },
+        value: "newroad",
+        description: "New road description"
+    },
+    {
+        label: "New town",
+        value: "newtown"
+    }
+]
+
+const assistancePhrases = [
+    "assistance", "help", "assist"
+]
+
+const noTagPhrases = [
+    "no tag"
+]
+
 module.exports.run = async (client, interaction) => {
 
-    let url = interaction.data.options[0].value
-    let genReplace = interaction.data.options[1].value
-
-    if (url.includes("https://maps.app.goo.gl/")) {
-        url = await expandShortUrl(url)
+    let url = interaction.data.options[0]?.value
+    let tags = interaction.data.options[1]?.value
+    let description = interaction.data.options[2]?.value
+    
+    let assistance = false
+    let noTag = false
+    
+    if (assistancePhrases.includes(tags.trim().toLowerCase())) {
+        assistance = true
     }
-    const coordinates = extractCoordinatesFromUrl(url)
+    
+    if (noTagPhrases.includes(tags.trim().toLowerCase())) {
+        noTag = true
+    }
+    
+    url = await validateGoogleMapsUrl(url)
 
-    const streetviewMetadata = await getStreetviewMetadata(settings.googleApiKey, coordinates.lat, coordinates.lng)
+    if (!url.valid) return interaction.createMessage({
+        content: url.response
+    })
+  
+    
+    const coordinates = extractCoordinatesFromUrl(url.response)
+    
+    const {lat, lng} = coordinates
 
-    console.log(streetviewMetadata)
+    // I don't need streetview metadata, because openstreetmap api does all stuff so far
+    // const streetviewMetadata = await getStreetviewMetadata(settings.googleApiKey, lat, lng)
+    //
+    // console.log(streetviewMetadata)
 
-    const geocodingData = await getGeocodingData(coordinates.lat, coordinates.lng)
+    const geocodingData = await getGeocodingData(lat, lng)
 
     console.log(geocodingData)
 
     const town = geocodingData.address.town
+    const village = geocodingData.address.village
+    const city = geocodingData.address.city
+    const neighbourhood = geocodingData.address.neighbourhood
+    const suburb = geocodingData.address.suburb
+    const province = geocodingData.address.province
     const state = geocodingData.address.state
     const country = geocodingData.address.country
     const code = geocodingData.address.country_code
     const discordEmojiFlag = `:flag_${code.toLowerCase()}:`
+    
+    console.log(interaction)
 
-
-    await interaction.createMessage(`Coordinates: ${coordinates.lat}, ${coordinates.lng}, Gen Replace: ${genReplace}, Town: ${town}, State: ${state}, Country: ${country}, Code: ${code}, Discord Emoji Flag: ${discordEmojiFlag}`)
+    
+    if (!assistance) {
+        await interaction.createMessage(`Coordinates: ${coordinates.lat}, ${coordinates.lng}, Description: ${description}, Tags: ${tags}, Town: ${town}, State: ${state}, Country: ${country}, Code: ${code}, Discord Emoji Flag: ${discordEmojiFlag}`)
+    } else {
+        await interaction.createMessage({content:"Choose tags that fit your location the best.", components:[{
+            type: 1,
+                components: [{
+                    type: 3,
+                    custom_id: `assistance${interaction.member.id}`,
+                    options: assistanceSelectMenuTags,
+                    placeholder: "Choose tag/s",
+                    min_values: 1,
+                    max_values: assistanceSelectMenuTags.length
+                }]
+            }]})
+    }
 }
 
 module.exports.help = {
@@ -129,18 +194,21 @@ module.exports.help = {
     description: "New coverage appeared? Let others know about that!",
     options: [
         {
-            name: "url",
-            description: "Url of the new coverage",
             type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
+            name: "url",
+            description: "The crucial one. Enter google maps url so we both know about that loc.",
             required: true
         },
         {
-            name: "gen-replace",
-            description: "Did this new coverage replace an older one? If so, what kind of coverage was replaced?",
             type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
-            required: true,
-            choices: genReplaceChoices
+            name: "tags",
+            description: "Specify the coverage with tags. Not sure, then type \"help\"",
+            required: true
         },
-
+        {
+            type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
+            name: "description",
+            description: "Want to add something special? You can so here!"
+        },
     ]
 }

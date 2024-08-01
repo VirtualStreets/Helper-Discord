@@ -17,17 +17,17 @@ module.exports.help = {
 	description: "Allows to remove a violation of someone",
 	options: [
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
 			name: "user",
 			description: "User to remove violation",
-			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
 			required: true
 		},
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.NUMBER,
 			name: "violation-id",
 			description: "Violation ID to remove",
-			type: Eris.Constants.ApplicationCommandOptionTypes.NUMBER,
-			min_value: 1,
-			required: true
+			required: true,
+			min_value: 1
 		}
 	]
 }

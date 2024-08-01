@@ -31,22 +31,22 @@ module.exports.help = {
 	description: "Allows to timeout someone",
 	options: [
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
 			name: "user",
 			description: "User to timeout",
-			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
 			required: true
 		},
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.NUMBER,
 			name: "duration",
 			description: "Duration of the timeout",
-			type: Eris.Constants.ApplicationCommandOptionTypes.NUMBER,
+			required: true,
 			min_value: 1,
-			required: true
 		},
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
 			name: "duration-unit",
 			description: "Duration unit of the timeout",
-			type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
 			required: true,
 			choices: [
 				{
@@ -68,10 +68,9 @@ module.exports.help = {
 			]
 		},
 		{
-			name: "reason",
-			description: "Reason of the timeout",
 			type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
-			required: false
+			name: "reason",
+			description: "Reason of the timeout"
 		},
 	]
 }

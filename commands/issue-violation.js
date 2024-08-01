@@ -23,15 +23,15 @@ module.exports.help = {
 	description: "Allows to issue a violation to someone",
 	options: [
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
 			name: "user",
 			description: "User to timeout",
-			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
 			required: true
 		},
 		{
+			type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
 			name: "rule-clause",
 			description: "Which rule is violated",
-			type: Eris.Constants.ApplicationCommandOptionTypes.STRING,
 			required: true,
 			choices: rules.map(rule => ({ name: `${rule.id} - ${rule.rule}`, value: rule.id }))
 		}

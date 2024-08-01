@@ -16,10 +16,9 @@ module.exports.help = {
 	description: "Allows to see violations of someone",
 	options: [
 		{
-			name: "user",
-			description: "User to see violations - yourself if blank",
 			type: Eris.Constants.ApplicationCommandOptionTypes.USER,
-			required: false
+			name: "user",
+			description: "User to see violations - yourself if blank"
 		}
 	]
 }
