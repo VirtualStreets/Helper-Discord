@@ -1,4 +1,5 @@
-const Eris = require("eris");
+const Eris = require("eris")
+const calculateTimeoutTime = require("../functions/calculateTimeoutTime")
 
 const rules = require('../rules.json')["rules"]
 
@@ -8,14 +9,18 @@ module.exports.run = async (client, interaction) => {
 	const ruleViolated = rules.find(rule => rule.id === ruleClause)
 	
 	const lastViolations = client.db.get(`violations_${member.id}`) || []
+	const timeoutDuration = await calculateTimeoutTime(lastViolations, ruleViolated.severity)
+	console.log(timeoutDuration)
 	let violationId = 1
 	for (let violation of lastViolations) {
 		if (violation.id >= violationId) violationId = violation.id + 1
 	}
 	lastViolations.push({ id: violationId, ruleId: ruleViolated.id, rule: ruleViolated.rule, severity: ruleViolated.severity })
 	client.db.set(`violations_${member.id}`, lastViolations)
-	
-	interaction.createMessage(`<@${member.id}> violated: ${ruleViolated.id} - ${ruleViolated.rule}`)
+	let reason = `${ruleViolated.id} - ${ruleViolated.rule} | Moderator: ${interaction.member.user.username}`
+	if (timeoutDuration === -1) member.ban(0, reason)
+	if (timeoutDuration > 0) member.edit({communicationDisabledUntil: new Date(Date.now() + (timeoutDuration * 60 * 60 * 1000))}, reason)
+	interaction.createMessage(`<@${member.id}> violated: ${ruleViolated.id} - ${ruleViolated.rule}\n${timeoutDuration === -1 ? "Member banned!" : (timeoutDuration > 0 ? `Member got timeout for ${timeoutDuration} hours!` : `No action for member.`)}`)
 }
 
 module.exports.help = {

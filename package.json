@@ -13,6 +13,8 @@
   "dependencies": {
     "ark.db": "^2.7.1",
     "axios": "^1.7.2",
-    "eris": "^0.17.2"
+    "canvas": "^2.11.2",
+    "eris": "github:abalabahaha/eris#dev",
+    "node-fetch": "^3.3.2"
   }
 }

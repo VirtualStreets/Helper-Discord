@@ -39,7 +39,7 @@ async function loadCommands(directory, commandType) {
         } else {
             let notSame = existingCommand.name !== commandData.name ||
                   (commandType === Eris.Constants.ApplicationCommandTypes.CHAT_INPUT && (existingCommand.description !== commandData.description ||
-                  (existingCommand.options?.length ? existingCommand.options.length : 0) !== commandData.options.length ||
+                  (existingCommand.options ? existingCommand.options.length : 0) !== (commandData.options ? commandData.options.length : 0) ||
                       existingCommand.options?.some(option => {
                       const commandOption = commandData.options.find(o => o.name === option.name);
                       return !commandOption || JSON.stringify(commandOption) !== JSON.stringify(option);
@@ -54,7 +54,7 @@ async function loadCommands(directory, commandType) {
     }
 
     for (let data of cmds) {
-        if (data.type == commandType && !collection.has(data.name)) {
+        if (data.type === commandType && !collection.has(data.name)) {
             await client.deleteGuildCommand(settings.serverId, data.id);
             console.log(`[${directory}] deleted ${data.name}`);
         }

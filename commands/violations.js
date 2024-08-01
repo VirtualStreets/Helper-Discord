@@ -5,7 +5,6 @@ module.exports.run = async (client, interaction) => {
 	
 	let lastViolations = client.db.get(`violations_${member.id}`) || []
 	lastViolations = lastViolations.map(violation => `Violation #${violation.id} - \`${violation.ruleId}\` ${violation.rule}`).join("\n")
-	console.log(lastViolations)
 	if (lastViolations.length === 0) lastViolations = "No violations"
 	
 	interaction.createMessage(`<@${member.id}> violations:\n${lastViolations}`)
