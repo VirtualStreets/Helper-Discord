@@ -8,7 +8,22 @@ module.exports = async (url) => {
 		} else if (!url.startsWith("https://maps.app.goo.gl/")) {
 			return {valid: false, response: "Invalid Url"}
 		}
-		
-		return await {valid: true, response: await expandShortUrl(url)}
+		try {
+			const expandedUrl = await expandShortUrl(url);
+			return {valid: true, response: expandedUrl};
+		} catch (e) {
+			return {valid: false, response: "Invalid Url"}
+		}
 	}
+	// https://www.google.com/maps/@40.7128,-74.0060
+	if (url.includes("google.com/maps/@")) {
+		if (url.startsWith("google.com/maps/@")) {
+			url = "https://" + url
+		} else if (!url.startsWith("https://www.google.com/maps/@")) {
+			return {valid: false, response: "Invalid Url"}
+		}
+		return {valid: true, response: url};
+	}
+
+	return {valid: false, response: "Invalid Url"}
 }

@@ -30,6 +30,7 @@ module.exports.run = async (client, interaction) => {
     const countryCode = geocodingData.address.country_code;
     const countryName = geocodingData.address.country;
     const countryBoundingBox = await getCountryBoundingBox(countryName)
+    console.log(countryBoundingBox)
 
     const difLat = countryBoundingBox.maxLat - countryBoundingBox.minLat;
     const difLng = countryBoundingBox.maxLon - countryBoundingBox.minLon;
@@ -42,13 +43,16 @@ module.exports.run = async (client, interaction) => {
     const result = await parseStringPromise(worldMapSvg);
 
     const svgElement = result.svg
+    console.log("svg element")
+    console.log(svgElement)
 
     const worldMapDimensions = {
-        width: svgElement.$.width,
-        height: svgElement.$.height
+        width: svgElement["$"].width,
+        height: svgElement["$"].height
     }
-    const countryDimensions = await getCountryDimensions(countryCode.toUpperCase(), worldMapSvg);
-
+    const countryDimensions = await getCountryDimensions(countryName.toLowerCase().replace(/ /g, "_"), worldMapSvg);
+    console.log("country dimensions")
+    console.log(countryDimensions)
 
     const width = 1600;
     const height = 900;
@@ -58,8 +62,7 @@ module.exports.run = async (client, interaction) => {
 
     ctx.fillStyle = "white";
     await ctx.fillRect(0, 0, width, height);
-    const svg = await loadImage(`assets/img/countrySvg/${countryName.toLowerCase().replace(/ /g, "")}.svg`);
-
+    const svg = await loadImage(`assets/img/countrySvg/${countryName.replace(/ /g, "")}.svg`);
 
     const streetviewImageProps = {
         width: 780,
@@ -100,8 +103,8 @@ module.exports.run = async (client, interaction) => {
     // experimental
     const x = 974;
     const y = 464;
-    const actualWidth = 400;
-    const actualHeight = actualWidth * svg.height / svg.width;
+    let actualWidth = 400;
+    let actualHeight = actualWidth * svg.height / svg.width;
 
     ctx.drawImage(svg, x, y, actualWidth, actualHeight);
 
@@ -113,28 +116,49 @@ module.exports.run = async (client, interaction) => {
 
     console.log(worldMapDimensions.width)
     console.log(worldMapDimensions.height)
+    console.log("country dimensions")
+    console.log(countryDimensions)
+    console.log(countryBoundingBox)
     const maxLeftSvg =  countryDimensions.offset.x / worldMapDimensions.width
     const maxTopSvg =  countryDimensions.offset.y / worldMapDimensions.height;
-    const maxLeftActualMap = (parseFloat(countryBoundingBox.minLon) + 144) / 360;
-    const maxTopActualMap = (118-parseFloat(countryBoundingBox.maxLat)) / 180;
+    const maxRightSvg = (countryDimensions.offset.x + countryDimensions.width) / worldMapDimensions.width;
+    const maxBottomSvg = (countryDimensions.offset.y + countryDimensions.height) / worldMapDimensions.height;
+    const maxLeftActualMap = (parseFloat(countryBoundingBox.minLon) + 180) / 360;
+    const maxTopActualMap = (parseFloat(countryBoundingBox.maxLat)) / 180;
+    const maxRightActualMap = (parseFloat(countryBoundingBox.maxLon) + 180) / 360;
+    const maxBottomActualMap = (parseFloat(countryBoundingBox.minLat)) / 180;
 
-    const horizontalDifference = maxLeftSvg - maxLeftActualMap;
-    const verticalDifference = maxTopActualMap - maxTopSvg;
+    const horizontalDifference = - (maxRightSvg - maxLeftSvg) + (maxRightActualMap - maxLeftActualMap);
+    const verticalDifference = (maxBottomSvg - maxTopSvg) - (maxBottomActualMap - maxTopActualMap);
 
-    const finalPointXOffset = x+(actualWidth+horizontalDifference * actualWidth) * (lngRatio)
-    const finalPointYOffset = y+(actualHeight+verticalDifference * actualHeight) * (1-latRatio)
+    console.log("ratio")
+    console.log(lngRatio)
+    console.log(latRatio)
+    console.log(horizontalDifference* actualWidth)
+    console.log(verticalDifference* actualHeight)
+
+    const finalPointXOffset = x + (lngRatio) * actualWidth
+    const finalPointYOffset = y + (1-latRatio) * actualHeight
+    // const finalPointXOffset = x+(actualWidth+horizontalDifference * actualWidth) * (lngRatio)
+    // const finalPointYOffset = y+(actualHeight+verticalDifference * actualHeight) * (1-latRatio)
+
+    const circleRadius={
+        background: 4,
+        foreground: 4
+    }
 
     ctx.fillStyle = '#DEA1B7';
 
     ctx.beginPath();
-    // ctx.arc(x+svg.width* (lngRatio)+(1+1.3/difLng) , y+svg.height* (1-latRatio)/(1+2.2/difLat), 20, 0, Math.PI * 2, true);
-    ctx.arc(finalPointXOffset, finalPointYOffset, 20, 0, Math.PI * 2, true);
+    // ctx.arc(x+svg.width* (lngRatio)+(1+1.3/difLng) , y+svg.height* (1-latRatio)/(1+2.2/difLat), circleRadius.background, 0, Math.PI * 2, true);
+    ctx.arc(x+svg.width* (lngRatio) , y+svg.height* (1-latRatio), circleRadius.background*2, 0, Math.PI * 2, true);
+    // ctx.arc(finalPointXOffset, finalPointYOffset, circleRadius.background, 0, Math.PI * 2, true);
 
     ctx.fill();
     ctx.fillStyle = '#DC0150';
 
     ctx.beginPath();
-    ctx.arc(finalPointXOffset, finalPointYOffset, 14, 0, Math.PI * 2, true);
+    ctx.arc(finalPointXOffset, finalPointYOffset, circleRadius.foreground, 0, Math.PI * 2, true);
 
     ctx.fill();
 

@@ -1,15 +1,23 @@
 const xml2js = require("xml2js");
 const svgPathBoundingBox = require("svg-path-bounding-box");
-module.exports = async (countryCode, worldMapSvg) => {
+
+module.exports = async (countryName, worldMapSvg) => {
     const result = await xml2js.parseStringPromise(worldMapSvg);
-    const paths = result.svg.g[0].path;
+    const groups = result.svg.g[0].g;
 
     let countryPath;
-    for (let path of paths) {
-        if (path["$"].id === countryCode) {
-            countryPath = path["$"].d;
-            break;
+    for (let group of groups) {
+        if (group.path) {
+            for (let path of group.path) {
+                console.log(path["$"].id.toLowerCase().replace(/ /g, ""));
+                console.log(countryName);
+                if (path["$"].id.toLowerCase() === countryName) {
+                    countryPath = path["$"].d;
+                    break;
+                }
+            }
         }
+        if (countryPath) break;
     }
 
     if (countryPath) {

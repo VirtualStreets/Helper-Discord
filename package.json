@@ -11,11 +11,18 @@
     "url": "https://github.com/VirtualStreets/Helper-Discord"
   },
   "dependencies": {
+    "@prisma/client": "^5.18.0",
     "ark.db": "^2.7.1",
     "axios": "^1.7.2",
     "canvas": "^2.11.2",
+    "dotenv": "^16.4.5",
     "eris": "github:abalabahaha/eris#dev",
+    "fs": "^0.0.1-security",
+    "mongodb": "^6.8.0",
     "node-fetch": "^3.3.2",
+    "pino": "^9.3.2",
+    "prisma": "^5.18.0",
+    "quick-lru": "^7.0.0",
     "svg-path-bounding-box": "^1.0.4",
     "xml2js": "^0.6.2"
   }
